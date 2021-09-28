@@ -1,0 +1,58 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'gradle.plugin.com.github.jengelman.gradle.plugins:shadow:7.0.0'
+    }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.5.21'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.21'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
+    id 'application'
+}
+
+group = 'gaeqs.github.io'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit:1.5.21'
+    implementation 'io.ktor:ktor-server-netty:1.6.3'
+    implementation 'io.ktor:ktor-server-sessions:1.6.3'
+    implementation 'io.ktor:ktor-auth:1.6.3'
+    implementation 'io.ktor:ktor-html-builder:1.6.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2'
+    annotationProcessor 'io.github.gaeqs:JavaYoutubeDownloader:1.2.2'
+    implementation 'com.mpatric:mp3agic:0.9.1'
+    implementation 'ws.schild:jave-core:3.1.1'
+    implementation 'org.litote.kmongo:kmongo:4.3.0'
+    implementation 'org.litote.kmongo:kmongo-async:4.3.0'
+    implementation 'org.litote.kmongo:kmongo-coroutine:4.3.0'
+}
+
+test {
+    useJUnit()
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = '11'
+    kotlinOptions {
+        languageVersion = "1.4"
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions.jvmTarget = '11'
+}
+
+application {
+    mainClass =  'io.github.gaeqs.kydserver.KYDServerKt'
+}
