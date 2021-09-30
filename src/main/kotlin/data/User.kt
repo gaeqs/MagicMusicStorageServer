@@ -12,7 +12,7 @@ User( name, sections( name, albums( name, image ), songs(name, artist, album) ) 
 data class User(
     @BsonId val name: String,
     val password: String,
-    val albums: MutableSet<Section> = HashSet(),
+    val albums: MutableSet<Album> = HashSet(),
     val sections: MutableSet<Section> = HashSet()
 )
 

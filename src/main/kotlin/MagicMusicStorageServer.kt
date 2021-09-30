@@ -1,7 +1,3 @@
-import com.mongodb.MongoClientSettings
-import data.Section
-import data.Song
-import data.User
 import data.UserSession
 import io.ktor.application.*
 import io.ktor.auth.*
@@ -11,33 +7,34 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.sessions.*
 import kotlinx.coroutines.runBlocking
-import org.litote.kmongo.*
-import org.litote.kmongo.coroutine.coroutine
-import org.litote.kmongo.reactivestreams.KMongo
-import java.util.concurrent.TimeUnit
+import mongo.MongoClient
 
 fun main() {
 
-    val settings = MongoClientSettings.builder()
-        .applyToClusterSettings {
-            it.serverSelectionTimeout(5, TimeUnit.SECONDS)
-        }.build()
+    //val section = Section("patata")
+    //val section2 = Section("patata2")
+    //section.songs += Song("song1", "artist1", "my album")
+    //section.songs += Song("song2", "artist2", "my album")
+    //section2.songs += Song("song3", "artist3", "my album")
+    //val album = Album("my album", File("/"))
+    //var user = User("pepe", "sjhjdhjdj", mutableSetOf(album), mutableSetOf(section, section2))
 
-    val client = KMongo.createClient(settings).coroutine
-    val database = client.getDatabase("test")
-    val users = database.getCollection<User>("users")
+    val client = MongoClient()
 
-    //val user = User("pepe", "aksjjsdjd")
     runBlocking {
         //users.insertOne(user)
 
-        //val result = users.updateOne("{_id: 'pepe', 'sections._id': 'potato'}",
-        //    "{\$push: { 'sections.$.songs': { _id: 'song2', artist: 'artist2', album: 'album2'  } }}")
+        client.createUser("pepe", "a")
 
-        val result = users.updateOne("{_id: 'pepe', 'sections.songs._id': 'song2'}",
-            "{\$set: { 'sections.$.songs.$._id': 'song22' }}")
+        //users.updateOne(
+        //    "{_id: 'pepe'}",
+        //    "{\$set: { 'sections.$[i].songs.$[j]._id': 'song2' }}",
+        //    UpdateOptions().arrayFilters(listOf("i._id" eq "patata", "j._id" eq "song22"))
+        //)
 
-        println(result)
+        //val result = users.updateOne("{_id: 'pepe', 'sections.songs._id': 'song2'}",
+        //    "{\$set: { 'sections.$.songs.$._id': 'song22' }}")
+        //println(result)
 
         //users.updateOne(
         //    and(User::name eq "pepe", User::sections / Section::name eq "patata"),
@@ -45,17 +42,17 @@ fun main() {
         //)
 
 
-        val user = users
-            .findAndCast<Map<Any, Any>>(User::name eq "pepe")
-            .projection(
-                User::sections elemMatch and(
-                    Section::name eq "patata",
-                    Section::songs elemMatch (Song::name eq "song")
-                )
-            )
-            //.projection(User::sections / Section::songs elemMatch (Song::name eq "song"))
-            .first()
-        println(user)
+        //val user = users
+        //    .findAndCast<Map<Any, Any>>(User::name eq "pepe")
+        //    .projection(
+        //        User::sections elemMatch and(
+        //            Section::name eq "patata",
+        //            Section::songs elemMatch (Song::name eq "song")
+        //        )
+        //    )
+        //    //.projection(User::sections / Section::songs elemMatch (Song::name eq "song"))
+        //    .first()
+        //println(user)
     }
 
     embeddedServer(Netty, port = 25565) {
