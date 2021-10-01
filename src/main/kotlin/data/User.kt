@@ -1,5 +1,6 @@
 package data
 
+import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
 import java.io.File
 
@@ -8,6 +9,7 @@ data class UserSession(val id: String, val count: Int)
 /*
 User( name, sections( name, albums( name, image ), songs(name, artist, album) ) )
  */
+
 
 data class User(
     @BsonId val name: String,
@@ -21,11 +23,13 @@ data class UserSnapshot(
     val password: String
 )
 
+@Serializable
 data class Section(
     @BsonId val name: String,
     val songs: MutableSet<Song> = HashSet()
 )
 
+@Serializable
 data class Song(
     @BsonId val name: String,
     var artist: String,

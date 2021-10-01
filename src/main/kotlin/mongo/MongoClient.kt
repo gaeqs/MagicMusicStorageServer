@@ -2,13 +2,14 @@ package mongo
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoWriteException
+import data.Section
+import data.Song
 import data.User
 import mongo.exception.MongoExceptionCodes
-import org.litote.kmongo.SetTo
+import org.bson.codecs.pojo.annotations.BsonId
+import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.*
-import org.litote.kmongo.eq
 import org.litote.kmongo.reactivestreams.KMongo
-import org.litote.kmongo.set
 import org.mindrot.jbcrypt.BCrypt
 import java.util.concurrent.TimeUnit
 
@@ -35,7 +36,6 @@ class MongoClient {
 
     suspend fun createUser(name: String, password: String): Boolean {
         try {
-
             collection.insertOne(User(name, BCrypt.hashpw(password, BCrypt.gensalt())))
             return true
         } catch (ex: MongoWriteException) {
@@ -51,11 +51,66 @@ class MongoClient {
         return BCrypt.checkpw(password, hash)
     }
 
-    suspend fun updatePassword(name: String, password: String) {
-        collection.updateOne(
-            User::name eq name,
-            set(SetTo(User::passwordHash, password))
-        )
+
+    private data class SongsQueryResult(@BsonId val name: String?, val sections: HashSet<Section>?)
+
+    suspend fun getSongs(user: String, section: String): Collection<Song> {
+        val result = collection
+            .findAndCast<SongsQueryResult>(User::name eq user)
+            .projection(User::sections elemMatch (Section::name eq section))
+            //.projection(User::sections / Section::songs elemMatch (Song::name eq "song"))
+            .first()
+
+
+        println(result)
+        if (result?.sections == null) return emptySet()
+        return result.sections.flatMap { it.songs }
+    }
+
+    suspend fun hasSection(user: String, section: String): Boolean {
+        return collection.findOne(
+            User::name eq user,
+            User::sections elemMatch (Section::name eq section)
+        ) != null
+    }
+
+    suspend fun addSection(user: String, section: String): Boolean {
+        try {
+            collection.updateOne(User::name eq user, addToSet(User::sections, Section(section)))
+            return true
+        } catch (ex: MongoWriteException) {
+            if (ex.code == MongoExceptionCodes.DUPLICATE_KEY) {
+                return false
+            }
+            ex.printStackTrace()
+            throw ex
+        }
+    }
+
+    suspend fun hasSectionSong(user: String, section: String, song: String): Boolean {
+        return collection.findOne(
+            User::name eq user,
+            User::sections elemMatch (and(
+                Section::name eq section,
+                Section::songs elemMatch (Song::name eq song)
+            ))
+        ) != null
+    }
+
+    suspend fun addSong(user: String, section: String, song: Song): Boolean {
+        try {
+            collection.updateOne(
+                and(User::name eq user, User::sections / Section::name eq section),
+                addToSet(User::sections.posOp / Section::songs, song)
+            )
+            return true
+        } catch (ex: MongoWriteException) {
+            if (ex.code == MongoExceptionCodes.DUPLICATE_KEY) {
+                return false
+            }
+            ex.printStackTrace()
+            throw ex
+        }
     }
 
 

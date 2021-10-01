@@ -31,10 +31,10 @@ fun main(args: Array<String>) {
         //    "{\$set: { 'sections.$.songs.$._id': 'song22' }}")
         //println(result)
 
-        //users.updateOne(
-        //    and(User::name eq "pepe", User::sections / Section::name eq "patata"),
-        //    //push(User::sections, Section("patata", mutableSetOf(Song("song", "artist", "album"))))
-        //)
+        users.updateOne(
+            and(User::name eq "pepe", User::sections / Section::name eq "patata"),
+            //push(User::sections, Section("patata", mutableSetOf(Song("song", "artist", "album"))))
+        )
 
 
         //val user = users

@@ -10,5 +10,5 @@ Content-Type: application/json
 > {% client.global.set("auth_token", response.body.token); %}
 
 ### Step 2. Use a JWT token to authorize.
-GET http://localhost:8888/api
+GET http://localhost:8888/api/songs?section=patata
 Authorization: Bearer {{auth_token}}
