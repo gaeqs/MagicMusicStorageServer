@@ -5,13 +5,11 @@ import com.mongodb.MongoWriteException
 import data.User
 import mongo.exception.MongoExceptionCodes
 import org.litote.kmongo.SetTo
-import org.litote.kmongo.coroutine.CoroutineClient
-import org.litote.kmongo.coroutine.CoroutineCollection
-import org.litote.kmongo.coroutine.CoroutineDatabase
-import org.litote.kmongo.coroutine.coroutine
+import org.litote.kmongo.coroutine.*
 import org.litote.kmongo.eq
 import org.litote.kmongo.reactivestreams.KMongo
 import org.litote.kmongo.set
+import org.mindrot.jbcrypt.BCrypt
 import java.util.concurrent.TimeUnit
 
 class MongoClient {
@@ -37,7 +35,8 @@ class MongoClient {
 
     suspend fun createUser(name: String, password: String): Boolean {
         try {
-            collection.insertOne(User(name, password))
+
+            collection.insertOne(User(name, BCrypt.hashpw(password, BCrypt.gensalt())))
             return true
         } catch (ex: MongoWriteException) {
             if (ex.code == MongoExceptionCodes.DUPLICATE_KEY) {
@@ -47,10 +46,15 @@ class MongoClient {
         }
     }
 
+    suspend fun checkUser(name: String, password: String): Boolean {
+        val hash = collection.projection(User::passwordHash, User::name eq name).first() ?: return false
+        return BCrypt.checkpw(password, hash)
+    }
+
     suspend fun updatePassword(name: String, password: String) {
         collection.updateOne(
             User::name eq name,
-            set(SetTo(User::password, password))
+            set(SetTo(User::passwordHash, password))
         )
     }
 

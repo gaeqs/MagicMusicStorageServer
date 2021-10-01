@@ -1,16 +1,12 @@
-import data.UserSession
-import io.ktor.application.*
 import io.ktor.auth.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.sessions.*
-import kotlinx.coroutines.runBlocking
 import mongo.MongoClient
+import java.io.File
 
-fun main() {
+val MONGO = MongoClient()
 
+fun main(args: Array<String>) {
+    /*
     //val section = Section("patata")
     //val section2 = Section("patata2")
     //section.songs += Song("song1", "artist1", "my album")
@@ -20,7 +16,6 @@ fun main() {
     //var user = User("pepe", "sjhjdhjdj", mutableSetOf(album), mutableSetOf(section, section2))
 
     val client = MongoClient()
-
     runBlocking {
         //users.insertOne(user)
 
@@ -54,32 +49,9 @@ fun main() {
         //    .first()
         //println(user)
     }
-
-    embeddedServer(Netty, port = 25565) {
-
-        install(Sessions) {
-            cookie<UserSession>("user_session")
-        }
-
-        install(Authentication) {
-            basic("auth-basic") {
-                realm = "Access to the '/' path"
-
-                skipWhen { call -> call.sessions.get<UserSession>() != null }
-                validate { credentials -> validateUser(credentials.name, credentials.password) }
-
-            }
-        }
-
-        routing {
-
-            get("/") {
-                call.respondText("hello world!")
-
-            }
-
-        }
-    }.start(wait = true)
+*/
+    val ktorArgs = args + "-config=application.conf"
+    EngineMain.main(ktorArgs)
 }
 
 private fun validateUser(name: String, password: String): UserIdPrincipal? {
