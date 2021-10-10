@@ -2,6 +2,7 @@ package mongo
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoWriteException
+import data.Album
 import data.Section
 import data.Song
 import data.User
@@ -54,16 +55,13 @@ class MongoClient {
 
     private data class SongsQueryResult(@BsonId val name: String?, val sections: HashSet<Section>?)
 
-    suspend fun getSongs(user: String, section: String): Collection<Song> {
+    suspend fun getSongs(user: String, section: String): List<Song> {
         val result = collection
             .findAndCast<SongsQueryResult>(User::name eq user)
             .projection(User::sections elemMatch (Section::name eq section))
-            //.projection(User::sections / Section::songs elemMatch (Song::name eq "song"))
             .first()
 
-
-        println(result)
-        if (result?.sections == null) return emptySet()
+        if (result?.sections == null) return emptyList()
         return result.sections.flatMap { it.songs }
     }
 
@@ -74,7 +72,16 @@ class MongoClient {
         ) != null
     }
 
+    suspend fun hasAlbum(user: String, album: String): Boolean {
+        return collection.findOne(
+            User::name eq user,
+            User::albums elemMatch (Album::name eq album)
+        ) != null
+    }
+
     suspend fun addSection(user: String, section: String): Boolean {
+        if (hasSection(user, section)) return false
+
         try {
             collection.updateOne(User::name eq user, addToSet(User::sections, Section(section)))
             return true
@@ -98,6 +105,7 @@ class MongoClient {
     }
 
     suspend fun addSong(user: String, section: String, song: Song): Boolean {
+        if (hasSectionSong(user, section, song.name)) return false
         try {
             collection.updateOne(
                 and(User::name eq user, User::sections / Section::name eq section),

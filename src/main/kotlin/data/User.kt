@@ -4,13 +4,6 @@ import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
 import java.io.File
 
-data class UserSession(val id: String, val count: Int)
-
-/*
-User( name, sections( name, albums( name, image ), songs(name, artist, album) ) )
- */
-
-
 data class User(
     @BsonId val name: String,
     val passwordHash: String,
@@ -19,24 +12,25 @@ data class User(
 )
 
 data class UserSnapshot(
-    @BsonId val name: String,
-    val password: String
+    @BsonId val name: String = "",
+    val password: String = ""
 )
 
 @Serializable
 data class Section(
-    @BsonId val name: String,
+    @BsonId val name: String = "",
     val songs: MutableSet<Song> = HashSet()
 )
 
 @Serializable
 data class Song(
-    @BsonId val name: String,
-    var artist: String,
-    val album: String
+    @BsonId val id: String = "",
+    val name: String = "",
+    val artist: String = "",
+    val album: String = "",
 )
 
 data class Album(
-    @BsonId val name: String,
-    val image: File
+    @BsonId val name: String = "",
+    val image: File? = null
 )

@@ -1,9 +1,10 @@
 import io.ktor.auth.*
 import io.ktor.server.netty.*
 import mongo.MongoClient
-import java.io.File
+import request.SongDownloadTaskStorage
 
 val MONGO = MongoClient()
+val TASK_STORAGE = SongDownloadTaskStorage()
 
 fun main(args: Array<String>) {
     /*

@@ -1,6 +1,7 @@
 package server
 
 import MONGO
+import TASK_STORAGE
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
@@ -12,10 +13,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 
-val PipelineContext<Unit, ApplicationCall>.username: String
+private val PipelineContext<Unit, ApplicationCall>.username: String
     get() = call.principal<JWTPrincipal>()!!.payload.getClaim("username").asString()
 
-fun Application.apiModule(testing: Boolean = false) {
+fun Application.apiModuleGet(testing: Boolean = false) {
     routing {
         authenticate("api-jwt") {
             get("/api") {
@@ -24,16 +25,16 @@ fun Application.apiModule(testing: Boolean = false) {
                 val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
                 call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
             }
-            get("/api/songs") {
+            get("/api/get/songs") {
                 val section = call.parameters["section"]
                 if (section == null) {
                     call.respond(HttpStatusCode.NotFound)
                     return@get
                 }
                 try {
-                    val songs = MONGO.getSongs(username, section)
+                    val songs = MONGO.getSongs(username, section).map { it.copy(id = "") }
                     call.respond(HttpStatusCode.OK, Json.encodeToString(songs))
-                } catch (ex : Exception) {
+                } catch (ex: Exception) {
                     ex.printStackTrace()
                     throw ex
                 }

@@ -4,7 +4,6 @@ import MONGO
 import com.auth0.jwk.JwkProviderBuilder
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import data.UserSession
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
@@ -15,7 +14,6 @@ import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.serialization.*
-import io.ktor.sessions.*
 import kotlinx.serialization.Serializable
 import java.io.File
 import java.security.KeyFactory
@@ -29,10 +27,6 @@ import java.util.concurrent.TimeUnit
 private data class LoginUser(val username: String, val password: String)
 
 fun Application.authModule(testing: Boolean = false) {
-    install(Sessions) {
-        cookie<UserSession>("user_session")
-    }
-
     install(ContentNegotiation) {
         json()
     }
@@ -70,6 +64,7 @@ fun Application.authModule(testing: Boolean = false) {
         }
         post("/login") {
             try {
+                println("Someone called!")
                 val user = call.receive<LoginUser>()
 
                 if (!MONGO.checkUser(user.username, user.password)) {
