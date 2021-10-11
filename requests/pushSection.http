@@ -9,6 +9,6 @@ Content-Type: application/json
 
 > {% client.global.set("auth_token", response.body.token); %}
 
-### Step 2. Use a JWT token to authorize.
-GET http://localhost:25555/api/get/songs?section=patata
+### Step 2. Push request
+POST http://localhost:25555/api/post/section?section=patata
 Authorization: Bearer {{auth_token}}

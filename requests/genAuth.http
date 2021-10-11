@@ -1,0 +1,8 @@
+### Step 1. Retrieve and save a JWT token.
+POST http://localhost:25555/genAuth
+Content-Type: application/json
+
+{
+  "username": "jetbrains",
+  "password": "foobar"
+}

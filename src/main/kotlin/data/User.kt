@@ -1,19 +1,19 @@
 package data
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
+import request.DownloadRequest
+import request.SongDownloadStatus
 import java.io.File
 
 data class User(
     @BsonId val name: String,
     val passwordHash: String,
+    val history: List<HistoryEntry> = mutableListOf(),
     val albums: MutableSet<Album> = HashSet(),
     val sections: MutableSet<Section> = HashSet()
-)
-
-data class UserSnapshot(
-    @BsonId val name: String = "",
-    val password: String = ""
 )
 
 @Serializable
@@ -33,4 +33,11 @@ data class Song(
 data class Album(
     @BsonId val name: String = "",
     val image: File? = null
+)
+
+@Serializable
+data class HistoryEntry(
+    val time: Instant = Clock.System.now(),
+    val request: DownloadRequest = DownloadRequest("", "", "", "", ""),
+    val result: SongDownloadStatus = SongDownloadStatus.ERROR
 )

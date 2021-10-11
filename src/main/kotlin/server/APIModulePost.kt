@@ -11,6 +11,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.pipeline.*
 import request.DownloadRequest
+import request.SongDownloadTask
 
 
 private val PipelineContext<Unit, ApplicationCall>.username: String
@@ -32,39 +33,38 @@ fun Application.apiModulePost(testing: Boolean = false) {
                 }
             }
             post("/api/post/request") {
+                println("NEW REQUEEEEST")
                 val request: DownloadRequest
                 try {
                     request = call.receive()
                 } catch (ex: ContentTransformationException) {
-                    call.respondText("Bad format.", status = HttpStatusCode.BadRequest);
+                    call.respondText("Bad format.", status = HttpStatusCode.BadRequest)
                     return@post
                 }
                 val name = username
 
                 // Check if the section exists
                 if (!MONGO.hasSection(name, request.section)) {
-                    call.respondText("Section not found.", status = HttpStatusCode.BadRequest);
+                    call.respondText("Section not found.", status = HttpStatusCode.BadRequest)
                     return@post
                 }
 
                 // Check if the album exists
                 if (!MONGO.hasAlbum(name, request.album)) {
-                    call.respondText("Section not found.", status = HttpStatusCode.BadRequest);
+                    call.respondText("Album not found.", status = HttpStatusCode.BadRequest)
                     return@post
                 }
 
-                val tasks = TASK_STORAGE.getCurrentTasks()
 
                 // Check if the song already exists
+                val tasks = TASK_STORAGE.getCurrentTasks()
                 if (tasks.any { it.user == name && it.request.name == request.name }
                     || MONGO.hasSectionSong(name, request.section, request.name)) {
-                    call.respondText("Song already exists.", status = HttpStatusCode.BadRequest);
+                    call.respondText("Song already exists.", status = HttpStatusCode.BadRequest)
                     return@post
                 }
 
-                // TODO requests
-
-
+                TASK_STORAGE.submitTask(SongDownloadTask(name, request))
             }
         }
     }

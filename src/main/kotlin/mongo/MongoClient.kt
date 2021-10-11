@@ -2,10 +2,7 @@ package mongo
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoWriteException
-import data.Album
-import data.Section
-import data.Song
-import data.User
+import data.*
 import mongo.exception.MongoExceptionCodes
 import org.bson.codecs.pojo.annotations.BsonId
 import org.litote.kmongo.*
@@ -119,6 +116,13 @@ class MongoClient {
             ex.printStackTrace()
             throw ex
         }
+    }
+
+    suspend fun addHistoryEntry(user: String, entry: HistoryEntry) {
+        collection.updateOne(
+            User::name eq user,
+            push(User::history, entry)
+        )
     }
 
 
