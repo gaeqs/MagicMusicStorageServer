@@ -91,6 +91,19 @@ class MongoClient {
         }
     }
 
+    suspend fun addAlbum(user: String, album: Album): Boolean {
+        try {
+            collection.updateOne(User::name eq user, addToSet(User::albums, album))
+            return true
+        } catch (ex: MongoWriteException) {
+            if (ex.code == MongoExceptionCodes.DUPLICATE_KEY) {
+                return false
+            }
+            ex.printStackTrace()
+            throw ex
+        }
+    }
+
     suspend fun hasSectionSong(user: String, section: String, song: String): Boolean {
         return collection.findOne(
             User::name eq user,

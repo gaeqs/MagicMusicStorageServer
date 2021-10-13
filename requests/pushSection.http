@@ -10,5 +10,10 @@ Content-Type: application/json
 > {% client.global.set("auth_token", response.body.token); %}
 
 ### Step 2. Push request
-POST http://localhost:25555/api/post/section?section=patata
+POST http://localhost:25555/api/post/section
 Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "section": "patata"
+}

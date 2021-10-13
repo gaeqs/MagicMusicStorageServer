@@ -9,6 +9,9 @@ object FileUtils {
         val MAIN_FOLDER = checkFolder(File("MagicMusicStorage"))
         val TEMP_FOLDER = checkFolder(File(MAIN_FOLDER, "temp"), true)
         val USER_FOLDER = checkFolder(File(MAIN_FOLDER, "user"))
+
+        val SONGS_FOLDER_NAME = "songs"
+        val ALBUMS_FOLDER_NAME = "albums"
     }
 
     /**
@@ -57,9 +60,26 @@ object FileUtils {
      */
     fun requestUserSongFile(user: String): File {
         val userFolder = checkFolder(File(Constants.USER_FOLDER, user))
+        val songsFolder = checkFolder(File(userFolder, Constants.SONGS_FOLDER_NAME))
+
         var file: File
         do {
-            file = File(userFolder, UUID.randomUUID().toString() + ".mp3")
+            file = File(songsFolder, UUID.randomUUID().toString() + ".mp3")
+        } while (file.exists())
+        return file
+    }
+
+    /**
+     * Returns a file for an album.
+     * @return the file.
+     */
+    fun requestUserAlbumFile(user: String): File {
+        val userFolder = checkFolder(File(Constants.USER_FOLDER, user))
+        val albums = checkFolder(File(userFolder, Constants.ALBUMS_FOLDER_NAME))
+
+        var file: File
+        do {
+            file = File(albums, UUID.randomUUID().toString() + ".png")
         } while (file.exists())
         return file
     }
