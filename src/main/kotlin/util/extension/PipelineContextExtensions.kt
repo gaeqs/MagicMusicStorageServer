@@ -1,4 +1,4 @@
-package util
+package util.extension
 
 import io.ktor.application.*
 import io.ktor.http.*

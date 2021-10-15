@@ -87,7 +87,6 @@ fun Application.authModule(testing: Boolean = false) {
                 throw e
             }
         }
-
         static(".well-known") {
             staticRootFolder = File("certs")
             file("jwks.json")

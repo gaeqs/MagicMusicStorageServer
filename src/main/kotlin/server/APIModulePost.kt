@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 import request.DownloadRequest
 import request.SongDownloadTask
 import util.FileUtils
-import util.receiveImage
+import util.extension.receiveImage
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
