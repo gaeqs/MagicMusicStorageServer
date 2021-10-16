@@ -19,7 +19,10 @@ class SongDownloadTask(val user: String, val request: DownloadRequest) : Runnabl
 
     @Volatile
     var status = SongDownloadStatus.QUEUED
-        private set
+        private set(value) {
+            field = value
+            println("[Request ${request.name}] New status: $value")
+        }
 
     val percentage: Double get() = step?.percentage ?: 0.0
 

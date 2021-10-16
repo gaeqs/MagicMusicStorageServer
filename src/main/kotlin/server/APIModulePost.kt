@@ -7,23 +7,25 @@ import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
 import io.ktor.util.pipeline.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import request.DownloadRequest
 import request.SongDownloadTask
 import util.FileUtils
-import util.extension.receiveImage
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
 @Serializable
-private data class SectionWrapper(val section: String)
+private data class SectionWrapper(val name: String)
 
 @Serializable
-private data class AlbumWrapper(val album: String)
+private data class AlbumWrapper(val name: String)
 
 private val PipelineContext<Unit, ApplicationCall>.username: String
     get() = call.principal<JWTPrincipal>()!!.payload.getClaim("username").asString()
@@ -35,42 +37,67 @@ fun Application.apiModulePost(testing: Boolean = false) {
                 val section: SectionWrapper
                 try {
                     section = call.receive()
-                } catch (ex: ContentTransformationException) {
-                    call.respondText("Bad format.", status = HttpStatusCode.BadRequest)
-                    return@post
-                }
-
-                if (MONGO.addSection(username, section.section)) {
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.Conflict)
-                }
-            }
-            post("/api/post/album") {
-                val album: AlbumWrapper
-                val image: BufferedImage
-                try {
-                    album = call.receive()
-                    image = receiveImage()
                 } catch (ex: Exception) {
                     call.respondText("Bad format.", status = HttpStatusCode.BadRequest)
                     return@post
                 }
+
+
+                if (MONGO.addSection(username, section.name)) {
+                    call.respond(HttpStatusCode.OK)
+                } else {
+                    call.respondText("Section already exists.", status = HttpStatusCode.Conflict)
+                }
+            }
+            post("/api/post/album") {
+                val parts = call.receiveMultipart().readAllParts().associateBy { it.name }
                 val name = username
 
-                if (MONGO.hasAlbum(name, album.album)) {
-                    call.respond(HttpStatusCode.Conflict)
+                // Parse header
+                val headerRaw = parts["header"]
+                if (headerRaw !is PartData.FormItem) {
+                    call.respondText("Header not found.", status = HttpStatusCode.BadRequest)
                     return@post
                 }
 
+                val header = Json.decodeFromString<AlbumWrapper>(headerRaw.value)
+                if (header.name.length > 128) {
+                    call.respondText("Name cannot be larger than 128 characters.", status = HttpStatusCode.BadRequest)
+                    return@post
+                }
 
-                val file = FileUtils.requestUserSongFile(name)
+                if (MONGO.hasAlbum(name, header.name)) {
+                    call.respondText("Album already exists.", status = HttpStatusCode.Conflict)
+                    return@post
+                }
+
+                // Parse image
+                val fileRaw = parts["image"]
+                if (fileRaw !is PartData.FileItem) {
+                    call.respondText("Image not found.", status = HttpStatusCode.BadRequest)
+                    return@post
+                }
+
+                val image: BufferedImage
+                try {
+                    image = ImageIO.read(fileRaw.streamProvider.invoke())
+                    if (image == null) {
+                        call.respondText("Bad image format.", status = HttpStatusCode.BadRequest)
+                        return@post
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    call.respondText("Bad image format.", status = HttpStatusCode.BadRequest)
+                    return@post
+                }
+
+                // Write image
+                val file = FileUtils.requestUserAlbumFile(name)
                 ImageIO.write(image, "PNG", file)
-
-                if (MONGO.addAlbum(username, Album(album.album, file))) {
+                if (MONGO.addAlbum(name, Album(header.name, file))) {
                     call.respond(HttpStatusCode.OK)
                 } else {
-                    call.respond(HttpStatusCode.Conflict)
+                    call.respondText("Album already exists.", status = HttpStatusCode.Conflict)
                 }
             }
             post("/api/post/request") {
@@ -105,6 +132,8 @@ fun Application.apiModulePost(testing: Boolean = false) {
                 }
 
                 TASK_STORAGE.submitTask(SongDownloadTask(name, request))
+
+                call.respondText("Downloading.", status = HttpStatusCode.OK)
             }
         }
     }

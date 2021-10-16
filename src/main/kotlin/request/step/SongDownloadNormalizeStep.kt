@@ -8,7 +8,7 @@ class SongDownloadNormalizeStep(private val converted: File) : SongDownloadStep<
 
     override fun run(): Boolean {
         try {
-            val processBuilder = ProcessBuilder("mp3gain", "-r", converted.absolutePath)
+            val processBuilder = ProcessBuilder("mp3gain", "/r", converted.absolutePath)
             val process = processBuilder.start()
             InputStreamReader(process.inputStream).readLines().forEach {
                 val index = it.indexOf('%')

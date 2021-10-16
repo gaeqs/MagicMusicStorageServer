@@ -21,7 +21,7 @@ object ConversionUtils {
      */
     fun convertToMP3(source: File, target: File, listener: EncoderProgressListener?): Boolean {
         try {
-            val multimediaObject = MultimediaObject(source)
+            val multimediaObject = MultimediaObject(source) { "ffmpeg" }
             val info = multimediaObject.info
             info.audio ?: return false
 
@@ -35,7 +35,7 @@ object ConversionUtils {
             encodingAttributes.setOutputFormat("mp3")
             encodingAttributes.setAudioAttributes(audioAttributes)
 
-            val encoder = Encoder()
+            val encoder = Encoder { "ffmpeg" }
             encoder.encode(multimediaObject, target, encodingAttributes, listener)
             return true
         } catch (ex: Exception) {

@@ -37,7 +37,7 @@ data class Album(
 
 @Serializable
 data class HistoryEntry(
-    val time: Instant = Clock.System.now(),
+    val time: Long = Clock.System.now().epochSeconds,
     val request: DownloadRequest = DownloadRequest("", "", "", "", ""),
     val result: SongDownloadStatus = SongDownloadStatus.ERROR
 )

@@ -39,6 +39,7 @@ dependencies {
 
     implementation "ch.qos.logback:logback-classic:1.2.6"
 
+    implementation 'org.openjdk.nashorn:nashorn-core:15.3'
     implementation 'io.github.gaeqs:JavaYoutubeDownloader:1.2.2'
     implementation 'net.jthink:jaudiotagger:3.0.0'
     implementation 'ws.schild:jave-core:3.1.1'

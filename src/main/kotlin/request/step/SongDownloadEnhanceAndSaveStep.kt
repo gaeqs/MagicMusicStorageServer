@@ -26,6 +26,7 @@ class SongDownloadEnhanceAndSaveStep(
             tag.setArtist(request.artist)
 
             val file = FileUtils.requestUserSongFile(user)
+            file.createNewFile()
             mp3.save(file)
             return file
         } catch (ex: Exception) {
