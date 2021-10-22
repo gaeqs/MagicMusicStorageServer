@@ -1,7 +1,9 @@
 package request.step
 
+import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+
 
 class SongDownloadNormalizeStep(private val converted: File) : SongDownloadStep<Boolean> {
     override var percentage = 0.0
@@ -10,17 +12,22 @@ class SongDownloadNormalizeStep(private val converted: File) : SongDownloadStep<
         try {
             val processBuilder = ProcessBuilder("mp3gain", "/r", converted.absolutePath)
             val process = processBuilder.start()
-            InputStreamReader(process.inputStream).readLines().forEach {
-                val index = it.indexOf('%')
+
+            val br = process.errorReader()
+            var line: String?
+
+            while (br.readLine().also { line = it } != null) {
+                val index = line!!.indexOf('%')
                 if (index != -1) {
-                    val int = it.substring(0, index).trim().toIntOrNull()
+                    val int = line!!.substring(0, index).trim().toIntOrNull()
                     if (int != null) {
                         percentage = int / 100.0
                     }
-                } else if (!it.trim().isEmpty()) {
-                    println("[MP3GAIN] $it")
+                } else if (line!!.trim().isNotEmpty()) {
+                    println("[MP3GAIN] $line")
                 }
             }
+
             process.waitFor()
             percentage = 1.0
             return true

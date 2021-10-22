@@ -74,7 +74,6 @@ class SongDownloadTask(val user: String, val request: DownloadRequest) : Runnabl
         // This part cannot be cancelled!
         cancelLock.withLock {
             val finalFile = enhanceAndSave(converted)
-            converted.delete()
             if (finalFile == null) {
                 status = SongDownloadStatus.ERROR
                 return
