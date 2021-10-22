@@ -33,7 +33,7 @@ fun Application.apiModuleGet(testing: Boolean = false) {
                 }
                 try {
                     val songs = MONGO.getSongs(username, section).map { it.copy(id = "") }
-                    call.respond(HttpStatusCode.OK, Json.encodeToString(songs))
+                    call.respondText(Json.encodeToString(songs), ContentType.Application.Json, HttpStatusCode.OK)
                 } catch (ex: Exception) {
                     ex.printStackTrace()
                     throw ex
