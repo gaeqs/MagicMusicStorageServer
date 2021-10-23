@@ -3,6 +3,7 @@ package request
 import MONGO
 import data.Song
 import io.github.gaeqs.javayoutubedownloader.stream.StreamOption
+import io.ktor.util.collections.*
 import kotlinx.coroutines.runBlocking
 import request.step.*
 import util.LockedField
@@ -10,17 +11,20 @@ import java.io.File
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-class SongDownloadTask(val user: String, val request: DownloadRequest) : Runnable {
+class SongDownloadTask(val user: String, val request: DownloadRequest) {
 
     private val cancelLock = ReentrantLock()
 
     @Volatile
     private var step: SongDownloadStep<*>? = null
 
+    var statusListeners = ConcurrentList<(SongDownloadTask) -> Unit>()
+
     @Volatile
     var status = SongDownloadStatus.QUEUED
         private set(value) {
             field = value
+            statusListeners.forEach { it(this) }
             println("[Request ${request.name}] New status: $value")
         }
 
@@ -29,7 +33,7 @@ class SongDownloadTask(val user: String, val request: DownloadRequest) : Runnabl
     var cancelled: Boolean by LockedField(cancelLock, false)
         private set
 
-    override fun run() {
+    suspend fun run() {
         if (status != SongDownloadStatus.QUEUED) return
         if (checkCancelled()) return
 
