@@ -4,7 +4,6 @@ import MONGO
 import data.Song
 import io.github.gaeqs.javayoutubedownloader.stream.StreamOption
 import io.ktor.util.collections.*
-import kotlinx.coroutines.runBlocking
 import request.step.*
 import util.LockedField
 import java.io.File
@@ -18,15 +17,9 @@ class SongDownloadTask(val user: String, val request: DownloadRequest) {
     @Volatile
     private var step: SongDownloadStep<*>? = null
 
-    var statusListeners = ConcurrentList<(SongDownloadTask) -> Unit>()
-
     @Volatile
     var status = SongDownloadStatus.QUEUED
-        private set(value) {
-            field = value
-            statusListeners.forEach { it(this) }
-            println("[Request ${request.name}] New status: $value")
-        }
+        private set
 
     val percentage: Double get() = step?.percentage ?: 0.0
 
@@ -76,24 +69,22 @@ class SongDownloadTask(val user: String, val request: DownloadRequest) {
 
         status = SongDownloadStatus.ENHANCING
         // This part cannot be cancelled!
-        cancelLock.withLock {
-            val finalFile = enhanceAndSave(converted)
-            if (finalFile == null) {
-                status = SongDownloadStatus.ERROR
-                return
-            }
-
-            runBlocking {
-                val song = Song(finalFile.name, request.name, request.artist, request.album)
-                MONGO.addSong(user, request.section, song)
-                status = SongDownloadStatus.FINISHED
-            }
+        val finalFile = enhanceAndSave(converted)
+        if (finalFile == null) {
+            status = SongDownloadStatus.ERROR
+            return
         }
+
+        val song = Song(finalFile.name, request.name, request.artist, request.album)
+        MONGO.addSong(user, request.section, song)
+        status = SongDownloadStatus.FINISHED
     }
 
     fun cancel() {
         cancelLock.withLock {
-            if (status == SongDownloadStatus.FINISHED) return
+            if (status == SongDownloadStatus.FINISHED
+                || status == SongDownloadStatus.ERROR
+                || status == SongDownloadStatus.ENHANCING) return
             cancelled = true;
         }
     }
