@@ -1,7 +1,6 @@
 package server
 
 import MONGO
-import TASK_STORAGE
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.auth.jwt.*
@@ -28,7 +27,7 @@ fun Application.apiModuleGet(testing: Boolean = false) {
             get("/api/get/songs") {
                 val section = call.parameters["section"]
                 if (section == null) {
-                    call.respond(HttpStatusCode.NotFound)
+                    call.respond(HttpStatusCode.BadRequest, "Parameter section not found.")
                     return@get
                 }
                 try {
@@ -39,6 +38,50 @@ fun Application.apiModuleGet(testing: Boolean = false) {
                     throw ex
                 }
             }
+
+            get("/api/get/sections") {
+                try {
+                    val sections = MONGO.getSections(username)
+                    call.respondText(Json.encodeToString(sections), ContentType.Application.Json, HttpStatusCode.OK)
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    throw ex
+                }
+            }
+
+            get("/api/get/albums") {
+                try {
+                    val sections = MONGO.getAlbums(username)
+                    call.respondText(Json.encodeToString(sections), ContentType.Application.Json, HttpStatusCode.OK)
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    throw ex
+                }
+            }
+
+            get("/api/get/albumCover") {
+                val album = call.parameters["album"]
+                if (album == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Parameter album not found.")
+                    return@get
+                }
+
+                try {
+                    val image = MONGO.getAlbumImage(username, album)
+                    if (image == null || !image.isFile) {
+                        call.respond(HttpStatusCode.BadRequest, "Couldn't find album $album.")
+                        return@get
+                    }
+
+                    call.respondBytes(ContentType.Image.PNG, HttpStatusCode.OK) {
+                        image.inputStream().readBytes()
+                    }
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    throw ex
+                }
+            }
+
         }
     }
 }

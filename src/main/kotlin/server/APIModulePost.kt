@@ -80,11 +80,7 @@ fun Application.apiModulePost(testing: Boolean = false) {
 
                 val image: BufferedImage
                 try {
-                    image = ImageIO.read(fileRaw.streamProvider.invoke())
-                    if (image == null) {
-                        call.respondText("Bad image format.", status = HttpStatusCode.BadRequest)
-                        return@post
-                    }
+                    image = ImageIO.read(fileRaw.streamProvider())
                 } catch (e: Exception) {
                     e.printStackTrace()
                     call.respondText("Bad image format.", status = HttpStatusCode.BadRequest)

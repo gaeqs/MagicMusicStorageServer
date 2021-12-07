@@ -1,7 +1,6 @@
 package data
 
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import org.bson.codecs.pojo.annotations.BsonId
 import request.DownloadRequest
@@ -11,6 +10,14 @@ import java.io.File
 data class User(
     @BsonId val name: String,
     val passwordHash: String,
+    val history: List<HistoryEntry> = mutableListOf(),
+    val albums: MutableSet<Album> = HashSet(),
+    val sections: MutableSet<Section> = HashSet()
+)
+
+data class UserQuery(
+    @BsonId val name: String = "",
+    val passwordHash: String = "",
     val history: List<HistoryEntry> = mutableListOf(),
     val albums: MutableSet<Album> = HashSet(),
     val sections: MutableSet<Section> = HashSet()

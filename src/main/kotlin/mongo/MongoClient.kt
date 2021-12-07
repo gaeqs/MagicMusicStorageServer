@@ -4,11 +4,11 @@ import com.mongodb.MongoClientSettings
 import com.mongodb.MongoWriteException
 import data.*
 import mongo.exception.MongoExceptionCodes
-import org.bson.codecs.pojo.annotations.BsonId
 import org.litote.kmongo.*
 import org.litote.kmongo.coroutine.*
 import org.litote.kmongo.reactivestreams.KMongo
 import org.mindrot.jbcrypt.BCrypt
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 class MongoClient {
@@ -49,17 +49,32 @@ class MongoClient {
         return BCrypt.checkpw(password, hash)
     }
 
-
-    private data class SongsQueryResult(@BsonId val name: String?, val sections: HashSet<Section>?)
-
     suspend fun getSongs(user: String, section: String): List<Song> {
         val result = collection
-            .findAndCast<SongsQueryResult>(User::name eq user)
+            .findAndCast<UserQuery>(User::name eq user)
             .projection(User::sections elemMatch (Section::name eq section))
             .first()
 
         if (result?.sections == null) return emptyList()
         return result.sections.flatMap { it.songs }
+    }
+
+    suspend fun getSections(user: String): List<String> {
+        val data = collection.findAndCast<UserQuery>(User::name eq user)
+            .projection(User::sections / Section::name).first() ?: return emptyList()
+        return data.sections.map { it.name }
+    }
+
+    suspend fun getAlbums(user: String): List<String> {
+        val data = collection.findAndCast<UserQuery>(User::name eq user)
+            .projection(User::albums / Album::name).first() ?: return emptyList()
+        return data.albums.map { it.name }
+    }
+
+    suspend fun getAlbumImage(user: String, album: String): File? {
+        val data = collection.findAndCast<UserQuery>(User::name eq user)
+            .projection(User::albums elemMatch (Album::name eq album)).first() ?: return null
+        return data.albums.firstOrNull()?.image
     }
 
     suspend fun hasSection(user: String, section: String): Boolean {
