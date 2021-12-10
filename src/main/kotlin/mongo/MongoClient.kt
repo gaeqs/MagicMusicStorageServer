@@ -65,6 +65,13 @@ class MongoClient {
         return data.sections.map { it.name }
     }
 
+    suspend fun getSectionsAndSongs(user: String): Map<String, List<Song>> {
+        val data = collection.findAndCast<UserQuery>(User::name eq user)
+            .projection(User::sections / Section::name, User::sections / Section::songs).first() ?: return emptyMap()
+
+        return data.sections.associate { Pair(it.name, it.songs.map { s -> s.copy(id = "") }) }
+    }
+
     suspend fun getAlbums(user: String): List<String> {
         val data = collection.findAndCast<UserQuery>(User::name eq user)
             .projection(User::albums / Album::name).first() ?: return emptyList()

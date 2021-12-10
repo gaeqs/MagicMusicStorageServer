@@ -49,6 +49,16 @@ fun Application.apiModuleGet(testing: Boolean = false) {
                 }
             }
 
+            get("/api/get/sectionsAndSongs") {
+                try {
+                    val sections = MONGO.getSectionsAndSongs(username)
+                    call.respondText(Json.encodeToString(sections), ContentType.Application.Json, HttpStatusCode.OK)
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    throw ex
+                }
+            }
+
             get("/api/get/albums") {
                 try {
                     val sections = MONGO.getAlbums(username)

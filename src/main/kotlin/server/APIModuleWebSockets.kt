@@ -7,10 +7,24 @@ import io.ktor.auth.jwt.*
 import io.ktor.http.cio.websocket.*
 import io.ktor.routing.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import java.time.Duration
 
-class RequestListener(val user: String, val session: DefaultWebSocketServerSession)
+class RequestListener(val user: String, val session: DefaultWebSocketServerSession) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as RequestListener
+
+        if (session != other.session) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return session.hashCode()
+    }
+}
 
 private val DefaultWebSocketServerSession.username: String
     get() = call.principal<JWTPrincipal>()!!.payload.getClaim("username").asString()
@@ -33,11 +47,8 @@ fun Application.apiModuleWebSockets(testing: Boolean = false) {
                             TASK_STORAGE.sendAllRequests(listener)
                         }
                     }
-                } catch (e: ClosedReceiveChannelException) {
+                } finally {
                     TASK_STORAGE.listeners -= listener
-                } catch (e: Throwable) {
-                    TASK_STORAGE.listeners -= listener
-                    e.printStackTrace()
                 }
             }
         }
