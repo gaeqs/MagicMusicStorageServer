@@ -21,12 +21,6 @@ import util.FileUtils
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 
-@Serializable
-private data class SectionWrapper(val name: String)
-
-@Serializable
-private data class AlbumWrapper(val name: String)
-
 private val PipelineContext<Unit, ApplicationCall>.username: String
     get() = call.principal<JWTPrincipal>()!!.payload.getClaim("username").asString()
 
@@ -34,6 +28,9 @@ fun Application.apiModulePost(testing: Boolean = false) {
     routing {
         authenticate("api-jwt") {
             post("/api/post/section") {
+                @Serializable
+                data class SectionWrapper(val name: String)
+
                 val section: SectionWrapper
                 try {
                     section = call.receive()
@@ -50,6 +47,9 @@ fun Application.apiModulePost(testing: Boolean = false) {
                 }
             }
             post("/api/post/album") {
+                @Serializable
+                data class AlbumWrapper(val name: String)
+
                 val parts = call.receiveMultipart().readAllParts().associateBy { it.name }
                 val name = username
 
@@ -121,7 +121,7 @@ fun Application.apiModulePost(testing: Boolean = false) {
 
                 // Check if the song already exists
                 val tasks = TASK_STORAGE.getCurrentTasks()
-                if (tasks.any { it.user == name && it.request.name == request.name }
+                if (tasks.any { it.user == name && it.request.name == request.name && it.request.section == request.section }
                     || MONGO.hasSectionSong(name, request.section, request.name)) {
                     call.respondText("Song already exists.", status = HttpStatusCode.BadRequest)
                     return@post
@@ -130,6 +130,28 @@ fun Application.apiModulePost(testing: Boolean = false) {
                 TASK_STORAGE.submitTask(SongDownloadTask(name, request))
 
                 call.respondText("Downloading.", status = HttpStatusCode.OK)
+            }
+
+            post("/api/post/cancelRequest") {
+                @Serializable
+                data class CancelRequestWrapper(val name: String, val section: String)
+
+                val request: CancelRequestWrapper
+                try {
+                    request = call.receive()
+                } catch (ex: Exception) {
+                    call.respondText("Bad format.", status = HttpStatusCode.BadRequest)
+                    return@post
+                }
+
+                println(TASK_STORAGE.getCurrentTasks()
+                    .filter { it.request.name == request.name && it.request.section == request.section })
+
+                TASK_STORAGE.getCurrentTasks()
+                    .filter { it.request.name == request.name && it.request.section == request.section }
+                    .forEach { it.cancel() }
+
+                call.respondText("Ok", status = HttpStatusCode.OK)
             }
         }
     }
