@@ -70,6 +70,22 @@ object FileUtils {
     }
 
     /**
+     * Returns the file linked to the given song.
+     * @return the file or null.
+     */
+    fun getUserSongFile(user: String, fileName: String): File? {
+        val userFolder = File(Constants.USER_FOLDER, user)
+        if (!userFolder.isDirectory) return null
+        val songsFolder = File(userFolder, Constants.SONGS_FOLDER_NAME)
+        if (!songsFolder.isDirectory) return null
+
+        val file = File(songsFolder, fileName)
+        if (!file.isFile) return null
+
+        return file
+    }
+
+    /**
      * Returns a file for an album.
      * @return the file.
      */

@@ -10,6 +10,8 @@ import io.ktor.routing.*
 import io.ktor.util.pipeline.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import util.FileUtils
+import java.io.File
 
 
 private val PipelineContext<Unit, ApplicationCall>.username: String
@@ -24,6 +26,7 @@ fun Application.apiModuleGet(testing: Boolean = false) {
                 val expiresAt = principal.expiresAt?.time?.minus(System.currentTimeMillis())
                 call.respondText("Hello, $username! Token is expired at $expiresAt ms.")
             }
+
             get("/api/get/songs") {
                 val section = call.parameters["section"]
                 if (section == null) {
@@ -37,6 +40,38 @@ fun Application.apiModuleGet(testing: Boolean = false) {
                     ex.printStackTrace()
                     throw ex
                 }
+            }
+
+            get("/api/get/song") {
+                val section = call.parameters["section"]
+                val album = call.parameters["album"]
+                val name = call.parameters["name"]
+
+                if (section == null || album == null || name == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest, "Some of the parameters are null!" +
+                                "Section: $section, Album: $album, Name: $name"
+                    )
+                    return@get
+                }
+
+                val song = MONGO.getSongs(username, section).firstOrNull { it.name == name && it.album == album }
+                if (song == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest, "Couldn't find song $album - $name in section $section."
+                    )
+                    return@get
+                }
+
+                val file = FileUtils.getUserSongFile(username, song.id)
+                if (file == null) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError, "Song doesn't have file attached!"
+                    )
+                    return@get
+                }
+
+                call.respondFile(file)
             }
 
             get("/api/get/sections") {

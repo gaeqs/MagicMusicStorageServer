@@ -121,8 +121,12 @@ fun Application.apiModulePost(testing: Boolean = false) {
 
                 // Check if the song already exists
                 val tasks = TASK_STORAGE.getCurrentTasks()
-                if (tasks.any { it.user == name && it.request.name == request.name && it.request.section == request.section }
-                    || MONGO.hasSectionSong(name, request.section, request.name)) {
+                if (tasks.any {
+                        it.user == name &&
+                                it.request.name == request.name &&
+                                it.request.section == request.section &&
+                                it.request.album == request.album
+                    } || MONGO.hasSectionSong(name, request.section, request.name)) {
                     call.respondText("Song already exists.", status = HttpStatusCode.BadRequest)
                     return@post
                 }
@@ -134,7 +138,7 @@ fun Application.apiModulePost(testing: Boolean = false) {
 
             post("/api/post/cancelRequest") {
                 @Serializable
-                data class CancelRequestWrapper(val name: String, val section: String)
+                data class CancelRequestWrapper(val name: String, val section: String, val album : String)
 
                 val request: CancelRequestWrapper
                 try {
@@ -144,11 +148,12 @@ fun Application.apiModulePost(testing: Boolean = false) {
                     return@post
                 }
 
-                println(TASK_STORAGE.getCurrentTasks()
-                    .filter { it.request.name == request.name && it.request.section == request.section })
-
                 TASK_STORAGE.getCurrentTasks()
-                    .filter { it.request.name == request.name && it.request.section == request.section }
+                    .filter {
+                        it.request.name == request.name &&
+                                it.request.section == request.section &&
+                                it.request.album == request.album
+                    }
                     .forEach { it.cancel() }
 
                 call.respondText("Ok", status = HttpStatusCode.OK)
