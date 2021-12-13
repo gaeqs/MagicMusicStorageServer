@@ -97,6 +97,14 @@ class MongoClient {
         return data.albums.firstOrNull()?.image
     }
 
+    suspend fun getAlbumSongs(user: String, album: String): List<Song> {
+        val result = collection
+            .findAndCast<UserQuery>(User::name eq user)
+            .projection(User::sections elemMatch (Section::songs elemMatch (Song::album eq album)))
+            .first() ?: return emptyList()
+        return result.sections.flatMap { it.songs }
+    }
+
     suspend fun hasSection(user: String, section: String): Boolean {
         return collection.findOne(
             User::name eq user,
@@ -185,11 +193,36 @@ class MongoClient {
     suspend fun deleteSection(user: String, section: String): Boolean {
         try {
             collection.updateOne(
-                and(User::name eq user),
+                User::name eq user,
                 pullByFilter(User::sections, Section::name eq section)
             )
             return true
         } catch (ex: MongoWriteException) {
+            ex.printStackTrace()
+            throw ex
+        }
+    }
+
+    suspend fun deleteAlbum(user: String, album: String): Boolean {
+        try {
+            collection.updateOne(
+                User::name eq user,
+                pullByFilter(User::albums, Album::name eq album)
+            )
+
+            println(
+                pullByFilter(
+                    User::sections / Section::songs elemMatch (Song::album eq album)
+                ).json
+            )
+
+            collection.updateMany(
+                "{}",
+                "{\$pull: {sections: {\$elemMatch: {album: \"$album\"}}}}"
+            )
+
+            return true
+        } catch (ex: Exception) {
             ex.printStackTrace()
             throw ex
         }

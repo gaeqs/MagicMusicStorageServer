@@ -201,6 +201,27 @@ fun Application.apiModulePost(testing: Boolean = false) {
                 MONGO.deleteSection(user, request.name)
                 call.respondText("Ok", status = HttpStatusCode.OK)
             }
+
+            post("/api/post/deleteAlbum") {
+                @Serializable
+                data class DeleteAlbumRequest(val name: String)
+
+                val request: DeleteAlbumRequest
+                try {
+                    request = call.receive()
+                } catch (ex: Exception) {
+                    call.respondText("Bad format.", status = HttpStatusCode.BadRequest)
+                    return@post
+                }
+                val user = username
+                val songs = MONGO.getAlbumSongs(user, request.name)
+                songs.forEach { FileUtils.getUserSongFile(user, it.id)?.delete() }
+
+                MONGO.getAlbumImage(user, request.name)?.delete()
+                MONGO.deleteAlbum(user, request.name)
+
+                call.respondText("Ok", status = HttpStatusCode.OK)
+            }
         }
     }
 }

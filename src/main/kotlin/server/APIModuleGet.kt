@@ -11,7 +11,6 @@ import io.ktor.util.pipeline.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import util.FileUtils
-import java.io.File
 
 
 private val PipelineContext<Unit, ApplicationCall>.username: String
@@ -121,6 +120,22 @@ fun Application.apiModuleGet(testing: Boolean = false) {
                     call.respondBytes(ContentType.Image.PNG, HttpStatusCode.OK) {
                         image.inputStream().readBytes()
                     }
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    throw ex
+                }
+            }
+
+            get("/api/get/albumSongs") {
+                val album = call.parameters["album"]
+                if (album == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Parameter album not found.")
+                    return@get
+                }
+
+                try {
+                    val songs = MONGO.getAlbumSongs(username, album).map { it.copy(id = "") }
+                    call.respondText(Json.encodeToString(songs), ContentType.Application.Json, HttpStatusCode.OK)
                 } catch (ex: Exception) {
                     ex.printStackTrace()
                     throw ex
