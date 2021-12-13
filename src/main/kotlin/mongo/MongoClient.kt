@@ -59,6 +59,19 @@ class MongoClient {
         return result.sections.flatMap { it.songs }
     }
 
+    suspend fun getSong(user: String, section: String, name: String, album: String): Song? {
+        val result = collection
+            .findAndCast<UserQuery>(User::name eq user)
+            .projection(
+                User::sections elemMatch (and(
+                    Section::name eq section,
+                    Section::songs elemMatch (and(Song::name eq name, Song::album eq album))
+                ))
+            ).first()
+
+        return result?.sections?.firstOrNull()?.songs?.firstOrNull()
+    }
+
     suspend fun getSections(user: String): List<String> {
         val data = collection.findAndCast<UserQuery>(User::name eq user)
             .projection(User::sections / Section::name).first() ?: return emptyList()
@@ -126,18 +139,18 @@ class MongoClient {
         }
     }
 
-    suspend fun hasSectionSong(user: String, section: String, song: String): Boolean {
+    suspend fun hasSectionSong(user: String, section: String, name: String, album: String): Boolean {
         return collection.findOne(
             User::name eq user,
             User::sections elemMatch (and(
                 Section::name eq section,
-                Section::songs elemMatch (Song::name eq song)
+                Section::songs elemMatch (and(Song::name eq name, Song::album eq album))
             ))
         ) != null
     }
 
     suspend fun addSong(user: String, section: String, song: Song): Boolean {
-        if (hasSectionSong(user, section, song.name)) return false
+        if (hasSectionSong(user, section, song.name, song.album)) return false
         try {
             collection.updateOne(
                 and(User::name eq user, User::sections / Section::name eq section),
@@ -148,6 +161,35 @@ class MongoClient {
             if (ex.code == MongoExceptionCodes.DUPLICATE_KEY) {
                 return false
             }
+            ex.printStackTrace()
+            throw ex
+        }
+    }
+
+    suspend fun deleteSong(user: String, section: String, name: String, album: String): Boolean {
+        try {
+            collection.updateOne(
+                and(User::name eq user, User::sections / Section::name eq section),
+                pullByFilter(
+                    User::sections.posOp / Section::songs,
+                    and(Song::name eq name, Song::album eq album)
+                )
+            )
+            return true
+        } catch (ex: MongoWriteException) {
+            ex.printStackTrace()
+            throw ex
+        }
+    }
+
+    suspend fun deleteSection(user: String, section: String): Boolean {
+        try {
+            collection.updateOne(
+                and(User::name eq user),
+                pullByFilter(User::sections, Section::name eq section)
+            )
+            return true
+        } catch (ex: MongoWriteException) {
             ex.printStackTrace()
             throw ex
         }

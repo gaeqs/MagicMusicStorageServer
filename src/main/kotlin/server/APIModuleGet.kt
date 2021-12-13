@@ -55,7 +55,7 @@ fun Application.apiModuleGet(testing: Boolean = false) {
                     return@get
                 }
 
-                val song = MONGO.getSongs(username, section).firstOrNull { it.name == name && it.album == album }
+                val song = MONGO.getSong(username, section, name, album)
                 if (song == null) {
                     call.respond(
                         HttpStatusCode.BadRequest, "Couldn't find song $album - $name in section $section."
