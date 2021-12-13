@@ -82,7 +82,7 @@ class MongoClient {
         val data = collection.findAndCast<UserQuery>(User::name eq user)
             .projection(User::sections / Section::name, User::sections / Section::songs).first() ?: return emptyMap()
 
-        return data.sections.associate { Pair(it.name, it.songs.map { s -> s.copy(id = "") }) }
+        return data.sections.associate { Pair(it.name, it.songs.toList()) }
     }
 
     suspend fun getAlbums(user: String): List<String> {
@@ -210,15 +210,9 @@ class MongoClient {
                 pullByFilter(User::albums, Album::name eq album)
             )
 
-            println(
-                pullByFilter(
-                    User::sections / Section::songs elemMatch (Song::album eq album)
-                ).json
-            )
-
-            collection.updateMany(
-                "{}",
-                "{\$pull: {sections: {\$elemMatch: {album: \"$album\"}}}}"
+            collection.updateOne(
+                and(User::name eq user, User::sections / Section::songs / Song::album eq album),
+                pullByFilter(User::sections.allPosOp / Section::songs, Song::album eq album)
             )
 
             return true

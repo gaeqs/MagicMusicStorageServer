@@ -214,7 +214,7 @@ fun Application.apiModulePost(testing: Boolean = false) {
                     return@post
                 }
                 val user = username
-                val songs = MONGO.getAlbumSongs(user, request.name)
+                val songs = MONGO.getSectionsAndSongs(user).flatMap { it.value }.filter { it.album == request.name }
                 songs.forEach { FileUtils.getUserSongFile(user, it.id)?.delete() }
 
                 MONGO.getAlbumImage(user, request.name)?.delete()
