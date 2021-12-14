@@ -126,6 +126,27 @@ fun Application.apiModuleGet(testing: Boolean = false) {
                     throw ex
                 }
             }
+
+            get("/api/get/albumCoverModificationDate") {
+                val album = call.parameters["album"]
+                if (album == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Parameter album not found.")
+                    return@get
+                }
+
+                try {
+                    val image = MONGO.getAlbumImage(username, album)
+                    if (image == null || !image.isFile) {
+                        call.respond(HttpStatusCode.BadRequest, "Couldn't find album $album.")
+                        return@get
+                    }
+
+                    call.respondText(image.lastModified().toString(), status = HttpStatusCode.OK)
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    throw ex
+                }
+            }
         }
     }
 }
