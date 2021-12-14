@@ -13,7 +13,6 @@ val TASK_STORAGE = SongDownloadTaskStorage()
 fun main(args: Array<String>) {
     val ktorArgs = args + "-config=application.conf"
 
-    println(args)
     if (args.size > 3 && args[0] == "-sync") {
         val file = File(args[3])
 
